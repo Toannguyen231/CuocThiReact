@@ -27,6 +27,7 @@ export default function Footer() {
             <li><Link to="/qua-tang-doanh-nghiep">Quà doanh nghiệp</Link></li>
             <li><Link to="/tac-dong-xa-hoi">Tác động xã hội</Link></li>
             <li><Link to="/cam-nang">Cẩm nang</Link></li>
+            <li><Link to="/admin" style={{ opacity: 0.75, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🔐 Quản trị hệ thống</Link></li>
           </ul>
         </div>
         <div className="footer-info">
