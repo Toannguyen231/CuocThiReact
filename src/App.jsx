@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation, Link } from 'react-router-dom'
 import { useEffect } from 'react'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
@@ -94,6 +94,23 @@ function App() {
           <Route path="chat" element={<AdminLiveChat />} />
           <Route path="users" element={<AdminUsers />} />
         </Route>
+
+        {/* 404 Fallback Route */}
+        <Route
+          path="*"
+          element={
+            <div style={{ textAlign: 'center', padding: '6rem 2rem', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <h1 style={{ fontSize: '4rem', color: 'var(--primary)', marginBottom: '0.5rem', fontFamily: 'var(--font-heading)' }}>404</h1>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--primary-dark)' }}>Không tìm thấy trang</h2>
+              <p style={{ fontSize: '1rem', marginBottom: '1.5rem', color: 'var(--text-secondary)', maxWidth: '460px' }}>
+                Đường dẫn bạn yêu cầu không tồn tại hoặc đã được cập nhật. Vui lòng quay về trang chủ để tiếp tục khám phá Chiếu Nẫu.
+              </p>
+              <Link to="/" className="btn btn-primary" style={{ padding: '0.75rem 1.75rem', borderRadius: '8px', textDecoration: 'none', fontWeight: 600 }}>
+                Quay về Trang chủ
+              </Link>
+            </div>
+          }
+        />
       </Routes>
 
       {!isAdmin && <Footer />}

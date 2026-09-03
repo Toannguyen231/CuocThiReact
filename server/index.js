@@ -619,6 +619,16 @@ app.put('/api/admin/livechat/:sessionId/read', requireAdmin, async (req, res) =>
   res.json({ success: true })
 })
 
+// Serve production static frontend if dist exists
+const distPath = path.join(__dirname, '../dist')
+app.use(express.static(distPath))
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next()
+  res.sendFile(path.join(distPath, 'index.html'), (err) => {
+    if (err) next()
+  })
+})
+
 app.listen(PORT, () => {
   console.log(`Chiếu Nẫu API running at http://localhost:${PORT}`)
 })
