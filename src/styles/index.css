@@ -212,6 +212,22 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 
+.nav-logo-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: var(--white);
+  padding: 3px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.nav-brand:hover .nav-logo-img {
+  transform: scale(1.06);
+}
+
 .nav-brand-text {
   font-family: var(--font-heading);
   font-size: 1.2rem;
@@ -1278,114 +1294,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 0.5rem;
 }
 
-/* --- Customer Account --- */
-.account-page {
-  min-height: 70vh;
-  padding: calc(var(--navbar-height) + 3rem) var(--page-gutter) var(--section-y);
-  background:
-    linear-gradient(135deg, rgba(45, 90, 45, 0.08), rgba(201, 169, 110, 0.12)),
-    var(--cream-light);
-}
-
-.account-card {
-  width: min(100%, 520px);
-  margin: 0 auto;
-  padding: clamp(1.5rem, 4vw, 2.5rem);
-  background: var(--white);
-  border: 1px solid rgba(45, 90, 45, 0.1);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-}
-
-.account-card h1 {
-  font-size: 2rem;
-  margin: 0.5rem 0 0.75rem;
-  color: var(--primary-dark);
-}
-
-.account-card p {
-  margin-bottom: 1.5rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
-
-.account-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  padding: 0.35rem;
-  margin-bottom: 1.25rem;
-  background: var(--cream);
-  border-radius: var(--radius-md);
-}
-
-.account-tabs button {
-  min-height: 42px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.account-tabs button.active {
-  background: var(--white);
-  color: var(--primary-dark);
-  box-shadow: var(--shadow-sm);
-}
-
-.account-form {
-  display: grid;
-  gap: 1rem;
-}
-
-.account-form .btn-primary-action {
-  width: 100%;
-  margin-top: 0.25rem;
-}
-
-.account-profile-list {
-  display: grid;
-  gap: 0.85rem;
-  margin: 1.5rem 0;
-}
-
-.account-profile-list div {
-  display: grid;
-  gap: 0.25rem;
-  padding: 1rem;
-  background: var(--cream-light);
-  border: 1px solid rgba(45, 90, 45, 0.08);
-  border-radius: var(--radius-sm);
-}
-
-.account-profile-list span {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-}
-
-.account-profile-list strong {
-  color: var(--primary-dark);
-  overflow-wrap: anywhere;
-}
-
-.account-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.85rem;
-}
-
-.btn-secondary-action {
-  min-height: 46px;
-  padding: 0.85rem 1.35rem;
-  border: 1px solid rgba(45, 90, 45, 0.2);
-  border-radius: var(--radius-sm);
-  background: var(--white);
-  color: var(--primary-dark);
-  font-weight: 700;
-  cursor: pointer;
-}
+/* --- Customer Account: moved to auth.css --- */
 
 /* --- Footer --- */
 .footer {
@@ -2749,15 +2658,7 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: space-between;
   }
 
-  .account-card h1 {
-    font-size: 1.6rem;
-  }
 
-  .account-actions,
-  .account-actions .btn-primary-action,
-  .account-actions .btn-secondary-action {
-    width: 100%;
-  }
 
   .impact-grid {
     grid-template-columns: 1fr;

@@ -1,0 +1,660 @@
+/* ============================================================
+   CUSTOMER SUPPORT HUB & AI CHATBOT STYLES
+   Chiếu Nẫu - Sleek Floating Action Bubble (FAB) Speed Dial
+   ============================================================ */
+
+/* ─── Compact Floating Circular Bubble Hub ─── */
+.support-fab-hub {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.85rem;
+}
+
+/* ─── Main Floating Trigger Button (Single Round Bubble) ─── */
+.support-fab-trigger {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: var(--white);
+  box-shadow:
+    0 8px 25px rgba(45, 90, 45, 0.38),
+    0 2px 6px rgba(0, 0, 0, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+  animation: fab-glow 3s infinite ease-in-out;
+}
+
+.support-fab-trigger:hover {
+  transform: scale(1.08);
+  box-shadow:
+    0 12px 30px rgba(45, 90, 45, 0.5),
+    0 0 0 4px rgba(45, 90, 45, 0.15);
+}
+
+.support-fab-trigger.active {
+  background: var(--dark-soft);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  animation: none;
+}
+
+@keyframes fab-glow {
+  0%, 100% {
+    box-shadow: 0 8px 25px rgba(45, 90, 45, 0.38);
+  }
+  50% {
+    box-shadow:
+      0 8px 28px rgba(45, 90, 45, 0.55),
+      0 0 0 8px rgba(45, 90, 45, 0.16);
+  }
+}
+
+/* Icon Wrap with Rotation Effect */
+.fab-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.support-fab-trigger.active .fab-icon-wrap {
+  transform: rotate(90deg);
+}
+
+/* Online Badge Dot */
+.fab-online-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2.5px solid var(--white);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+  pointer-events: none;
+  animation: badge-pulse 2s infinite ease-in-out;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* ─── Speed-Dial Menu (Collapsible Pop-out) ─── */
+.support-speed-dial {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.65rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(16px) scale(0.92);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    visibility 0.25s;
+}
+
+.support-speed-dial.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+/* Speed Dial Items */
+.speed-dial-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: var(--font-body);
+  transition: transform 0.2s ease;
+}
+
+.speed-dial-item:hover {
+  transform: translateX(-4px);
+}
+
+/* Label Pill */
+.speed-dial-label {
+  padding: 0.4rem 0.75rem;
+  background: var(--white);
+  color: var(--primary-dark);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.speed-dial-item:hover .speed-dial-label {
+  background: var(--primary-dark);
+  color: var(--white);
+}
+
+/* Round Action Buttons in Speed Dial */
+.speed-dial-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.16);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.speed-dial-item:hover .speed-dial-btn {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Channel Colors */
+.speed-dial-item--ai .speed-dial-btn {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+}
+
+.speed-dial-item--messenger .speed-dial-btn {
+  background: linear-gradient(135deg, #00B2FF 0%, #006AFF 100%);
+}
+
+.speed-dial-item--zalo .speed-dial-btn {
+  background: #0068FF;
+}
+
+/* ─── Back To Top Button Alignment (Avoids Overlap) ─── */
+.back-to-top {
+  bottom: 6.25rem !important;
+  right: 2.35rem !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  z-index: 1100 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ─── AI Chat Window ─── */
+.support-chat-window {
+  position: fixed;
+  bottom: 6.25rem;
+  right: 2rem;
+  width: min(390px, calc(100vw - 2.5rem));
+  height: min(580px, calc(100vh - 8rem));
+  background: var(--white);
+  border-radius: 20px;
+  box-shadow:
+    0 16px 50px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+  z-index: 1250;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: chat-appear 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes chat-appear {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Chat Header */
+.support-chat-header {
+  padding: 1rem 1.15rem;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* ─── Mode Switcher Tabs ─── */
+.chat-channel-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #f1f4ee;
+  padding: 4px;
+  gap: 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.chat-channel-tab {
+  padding: 0.55rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+}
+
+.chat-channel-tab.active {
+  background: var(--white);
+  color: var(--primary-dark);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.tab-reply-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ee4d2d;
+  display: inline-block;
+  animation: badge-pulse 1.5s infinite;
+}
+
+.staff-welcome-box {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: var(--white);
+  border-radius: 12px;
+  border: 1px dashed rgba(45, 90, 45, 0.25);
+  margin: 0.5rem 0;
+}
+
+.staff-welcome-box h4 {
+  margin: 0 0 0.35rem;
+  color: var(--primary-dark);
+  font-size: 0.95rem;
+}
+
+.staff-welcome-box p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.staff-msg-badge-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.support-chat-header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.support-chat-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--white);
+  padding: 2px;
+  object-fit: contain;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.support-chat-title h4 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  color: var(--white);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.support-chat-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 2px;
+}
+
+.bubble-online-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  display: inline-block;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.support-chat-close-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.support-chat-close-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* Chat Messages Area */
+.support-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background: #fbfbf9;
+}
+
+.chat-message-row {
+  display: flex;
+  gap: 0.6rem;
+  max-width: 86%;
+}
+
+.chat-message-row--user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.chat-message-row--ai {
+  align-self: flex-start;
+}
+
+.chat-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--white);
+  padding: 2px;
+  object-fit: contain;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chat-bubble {
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.chat-message-row--user .chat-bubble {
+  background: var(--primary);
+  color: var(--white);
+  border-bottom-right-radius: 4px;
+}
+
+.chat-message-row--ai .chat-bubble {
+  background: var(--white);
+  color: var(--text-primary);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.chat-bubble p {
+  margin: 0 0 0.5rem;
+}
+
+.chat-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+/* Typing indicator */
+.chat-typing-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.75rem 1rem;
+  background: var(--white);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: 0.4;
+  animation: typing-bounce 1.3s infinite ease-in-out;
+}
+
+.chat-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.chat-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+  0%, 80%, 100% { transform: scale(0.8); opacity: 0.4; }
+  40% { transform: scale(1.3); opacity: 1; }
+}
+
+/* Quick Suggestion Chips */
+.support-chat-quick-chips {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 0.6rem 1rem;
+  background: var(--white);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  scrollbar-width: none;
+}
+
+.support-chat-quick-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--cream);
+  border: 1px solid rgba(45, 90, 45, 0.15);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.quick-chip-btn:hover {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+/* Human Handover Bar */
+.chat-human-handover {
+  padding: 0.5rem 1rem;
+  background: #f4f7f2;
+  border-top: 1px solid rgba(45, 90, 45, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.chat-handover-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chat-handover-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+  font-size: 0.76rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.chat-handover-link--messenger {
+  background: #e7f3ff;
+  color: #006aff;
+}
+
+.chat-handover-link--zalo {
+  background: #e6f0ff;
+  color: #0068ff;
+}
+
+/* Chat Input Bar */
+.support-chat-input-bar {
+  padding: 0.75rem 1rem;
+  background: var(--white);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.support-chat-input-bar input {
+  flex: 1;
+  padding: 0.65rem 0.9rem;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.support-chat-input-bar input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(45, 90, 45, 0.12);
+}
+
+.support-chat-send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary);
+  color: var(--white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.support-chat-send-btn:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: scale(1.05);
+}
+
+.support-chat-send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─── Zalo Modal / Contact info popup ─── */
+.zalo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.zalo-modal-card {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  position: relative;
+  animation: auth-fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.zalo-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--text-light);
+  cursor: pointer;
+}
+
+/* ─── Mobile Responsiveness ─── */
+@media (max-width: 640px) {
+  .support-fab-hub {
+    bottom: 1.25rem;
+    right: 1.25rem;
+  }
+  .support-fab-trigger {
+    width: 52px;
+    height: 52px;
+  }
+  .back-to-top {
+    bottom: 5.5rem !important;
+    right: 1.5rem !important;
+    width: 40px !important;
+    height: 40px !important;
+  }
+  .support-chat-window {
+    right: 1rem;
+    bottom: 4.75rem;
+    width: calc(100vw - 2rem);
+    height: calc(100vh - 6rem);
+  }
+}

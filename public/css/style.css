@@ -200,16 +200,18 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-logo {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: #fff url('/logo.png') center/contain no-repeat;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: transparent;
-  font-size: 0;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  color: var(--white);
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  box-shadow: 0 2px 12px rgba(45, 90, 45, 0.3);
 }
 
 .nav-brand-text {
