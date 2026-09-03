@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { getApiUrl } from '../utils/api'
 
 const CustomerAuthContext = createContext()
 const TOKEN_KEY = 'chieunau_customer_token'
@@ -14,7 +15,7 @@ export function CustomerAuthProvider({ children }) {
       return
     }
 
-    fetch('/api/customer/me', {
+    fetch(getApiUrl('/api/customer/me'), {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.ok ? res.json() : Promise.reject())
@@ -36,7 +37,7 @@ export function CustomerAuthProvider({ children }) {
   }
 
   const login = async (identifier, password) => {
-    const res = await fetch('/api/customer/login', {
+    const res = await fetch(getApiUrl('/api/customer/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier, password })
@@ -47,7 +48,7 @@ export function CustomerAuthProvider({ children }) {
   }
 
   const register = async ({ name, email, phone, password }) => {
-    const res = await fetch('/api/customer/register', {
+    const res = await fetch(getApiUrl('/api/customer/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, phone, password })

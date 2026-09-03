@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
+import { getApiUrl } from '../../utils/api'
 
 const QUICK_REPLIES = [
   'Dạ Chiếu Nẫu xin chào Quý khách! Em có thể hỗ trợ gì cho mình ạ?',
@@ -24,7 +25,7 @@ export default function AdminLiveChat() {
   const fetchSessions = async (silent = false) => {
     if (!silent) setLoading(true)
     try {
-      const res = await fetch('/api/admin/livechat', {
+      const res = await fetch(getApiUrl('/api/admin/livechat'), {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {
@@ -60,7 +61,7 @@ export default function AdminLiveChat() {
   // Mark session as read when selected
   useEffect(() => {
     if (activeSessionId && activeSession?.unread > 0) {
-      fetch(`/api/admin/livechat/${activeSessionId}/read`, {
+      fetch(getApiUrl(`/api/admin/livechat/${activeSessionId}/read`), {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
       }).catch(console.error)
@@ -74,7 +75,7 @@ export default function AdminLiveChat() {
 
     setSending(true)
     try {
-      const res = await fetch(`/api/admin/livechat/${activeSessionId}/reply`, {
+      const res = await fetch(getApiUrl(`/api/admin/livechat/${activeSessionId}/reply`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

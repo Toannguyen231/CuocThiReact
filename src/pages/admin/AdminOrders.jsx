@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { formatPrice } from '../../utils/api'
+import { formatPrice, getApiUrl } from '../../utils/api'
 
 const statusLabels = { pending: 'Chờ xử lý', confirmed: 'Đã xác nhận', shipping: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy' }
 const statusFilters = ['all', 'pending', 'confirmed', 'shipping', 'delivered', 'cancelled']
@@ -11,7 +11,7 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true)
 
   const fetchOrders = () => {
-    const url = filter === 'all' ? '/api/admin/orders' : `/api/admin/orders?status=${filter}`
+    const url = filter === 'all' ? getApiUrl('/api/admin/orders') : getApiUrl(`/api/admin/orders?status=${filter}`)
     fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('chieunau_admin_token')}` } })
       .then(res => res.json())
       .then(data => { setOrders(data.orders || []); setLoading(false) })
@@ -21,7 +21,7 @@ export default function AdminOrders() {
   useEffect(() => { fetchOrders() }, [filter])
 
   const updateStatus = async (id, status) => {
-    await fetch(`/api/admin/orders/${id}`, {
+    await fetch(getApiUrl(`/api/admin/orders/${id}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('chieunau_admin_token')}` },
       body: JSON.stringify({ status })

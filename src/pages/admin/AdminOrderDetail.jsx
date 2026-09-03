@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { formatPrice } from '../../utils/api'
+import { formatPrice, getApiUrl } from '../../utils/api'
 
 const statusLabels = {
   pending: 'Chờ xử lý',
@@ -18,7 +18,7 @@ export default function AdminOrderDetail() {
 
   const fetchOrder = () => {
     setLoading(true)
-    fetch(`/api/admin/orders/${id}`, {
+    fetch(getApiUrl(`/api/admin/orders/${id}`), {
       headers: { Authorization: `Bearer ${localStorage.getItem('chieunau_admin_token')}` }
     })
       .then(res => res.ok ? res.json() : Promise.reject(new Error('Không tải được đơn hàng')))
@@ -30,7 +30,7 @@ export default function AdminOrderDetail() {
   useEffect(() => { fetchOrder() }, [id])
 
   const updateStatus = async (status) => {
-    const res = await fetch(`/api/admin/orders/${id}`, {
+    const res = await fetch(getApiUrl(`/api/admin/orders/${id}`), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

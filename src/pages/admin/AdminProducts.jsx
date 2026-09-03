@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatPrice } from '../../utils/api'
+import { formatPrice, getApiUrl } from '../../utils/api'
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([])
@@ -7,7 +7,7 @@ export default function AdminProducts() {
   const [savingId, setSavingId] = useState(null)
 
   const fetchProducts = () => {
-    fetch('/api/admin/products', {
+    fetch(getApiUrl('/api/admin/products'), {
       headers: { Authorization: `Bearer ${localStorage.getItem('chieunau_admin_token')}` }
     })
       .then(res => res.json())
@@ -23,7 +23,7 @@ export default function AdminProducts() {
 
   const saveProduct = async (product) => {
     setSavingId(product.id)
-    await fetch(`/api/admin/products/${product.id}`, {
+    await fetch(getApiUrl(`/api/admin/products/${product.id}`), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

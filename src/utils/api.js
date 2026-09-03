@@ -1,11 +1,16 @@
-const API_BASE = '/api'
+export const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+
+export function getApiUrl(path) {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  return `${API_BASE}${cleanPath}`
+}
 
 async function request(url, options = {}) {
   const token = localStorage.getItem('chieunau_admin_token')
   const headers = { 'Content-Type': 'application/json', ...options.headers }
   if (token) headers['Authorization'] = `Bearer ${token}`
   
-  const res = await fetch(`${API_BASE}${url}`, { ...options, headers })
+  const res = await fetch(getApiUrl(`/api${url.startsWith('/') ? url : `/${url}`}`), { ...options, headers })
   const data = await res.json()
   if (!res.ok) throw new Error(data.message || 'Lỗi server')
   return data

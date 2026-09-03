@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext'
+import { getApiUrl } from '../../utils/api'
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`
@@ -117,7 +118,7 @@ export default function SupportHub() {
   const fetchLiveSession = async () => {
     if (!sessionId) return
     try {
-      const res = await fetch(`/api/livechat/session/${sessionId}`)
+      const res = await fetch(getApiUrl(`/api/livechat/session/${sessionId}`))
       if (res.ok) {
         const data = await res.json()
         if (data.session && data.session.messages) {
@@ -228,7 +229,7 @@ export default function SupportHub() {
       const customerName = customer?.name || 'Khách truy cập web'
       const phone = customer?.phone || customerContact || ''
 
-      const res = await fetch('/api/livechat/send', {
+      const res = await fetch(getApiUrl('/api/livechat/send'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

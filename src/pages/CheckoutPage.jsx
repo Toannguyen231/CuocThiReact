@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useCart } from '../contexts/CartContext'
 import { useCustomerAuth } from '../contexts/CustomerAuthContext'
-import { formatPrice } from '../utils/api'
+import { formatPrice, getApiUrl } from '../utils/api'
 import AddressMapPicker from '../components/ui/AddressMapPicker'
 
 export default function CheckoutPage() {
@@ -57,7 +57,7 @@ export default function CheckoutPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/orders', {
+      const res = await fetch(getApiUrl('/api/orders'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

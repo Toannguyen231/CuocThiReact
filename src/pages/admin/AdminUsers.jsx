@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { formatPrice } from '../../utils/api'
+import { formatPrice, getApiUrl } from '../../utils/api'
 
 const ROLES = [
   { value: 'customer', label: 'Khách hàng', icon: '👤', color: '#0284c7' },
@@ -38,7 +38,7 @@ export default function AdminUsers() {
   const fetchUsers = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch(getApiUrl('/api/admin/users'), {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {
@@ -81,7 +81,7 @@ export default function AdminUsers() {
 
     setSubmitting(true)
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch(getApiUrl('/api/admin/users'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ export default function AdminUsers() {
     setFormError('')
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+      const res = await fetch(getApiUrl(`/api/admin/users/${editingUser.id}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -141,7 +141,7 @@ export default function AdminUsers() {
 
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/admin/users/${passwordUser.id}/password`, {
+      const res = await fetch(getApiUrl(`/api/admin/users/${passwordUser.id}/password`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -168,7 +168,7 @@ export default function AdminUsers() {
   const handleDeleteConfirm = async () => {
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/admin/users/${deletingUser.id}`, {
+      const res = await fetch(getApiUrl(`/api/admin/users/${deletingUser.id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -193,7 +193,7 @@ export default function AdminUsers() {
     }
     const newStatus = user.status === 'locked' ? 'active' : 'locked'
     try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
+      const res = await fetch(getApiUrl(`/api/admin/users/${user.id}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

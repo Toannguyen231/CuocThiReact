@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { formatPrice } from '../../utils/api'
+import { formatPrice, getApiUrl } from '../../utils/api'
 import RevenueBarChart from '../../components/admin/RevenueBarChart'
 
 export default function AdminDashboard() {
@@ -8,7 +8,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/admin/dashboard', {
+    fetch(getApiUrl('/api/admin/dashboard'), {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('chieunau_admin_token')}` }
     })
       .then(res => res.json())
