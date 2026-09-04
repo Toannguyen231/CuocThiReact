@@ -5,7 +5,7 @@
 
 /* Chừa khoảng trống bên dưới cho Bottom Tab Bar để không che nội dung */
 body.app-mode {
-  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 /* Khi ở chế độ app: Thu gọn thanh điều hướng trên cùng (ẩn các link chữ vì Bottom Tab đã đảm nhận) */
@@ -17,10 +17,48 @@ body.app-mode .navbar .nav-hamburger {
   display: none !important;
 }
 
-/* Nâng độ cao cho SupportHub và BackToTop khi có BottomTabBar */
-body.app-mode .support-hub-trigger,
+/* Nâng độ cao cho SupportHub (Nút liên lạc FAB) và BackToTop khi có BottomTabBar */
+/* Class chính xác trong SupportHub.jsx là .support-fab-hub và .support-chat-window */
+body.app-mode .support-fab-hub {
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+  right: 1.25rem !important;
+  z-index: 9910 !important;
+}
+
+body.app-mode .support-chat-window {
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+  right: 1rem !important;
+  z-index: 9920 !important;
+}
+
 body.app-mode .back-to-top {
-  bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+  right: 4.8rem !important;
+  z-index: 9905 !important;
+}
+
+/* ----------------------------------------------------
+   Nút Quét QR nhanh trên thanh Navbar (Cả web & app)
+   ---------------------------------------------------- */
+.nav-qr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--primary, #2d5a2d);
+  background: rgba(45, 90, 45, 0.08);
+  border: 1px solid rgba(45, 90, 45, 0.2);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.nav-qr-btn:hover {
+  background: var(--primary, #2d5a2d);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 90, 45, 0.25);
 }
 
 /* ----------------------------------------------------
@@ -31,11 +69,11 @@ body.app-mode .back-to-top {
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(60px + env(safe-area-inset-bottom, 0px));
+  height: calc(62px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--cream-light, #faf7f2);
-  border-top: 1px solid rgba(45, 90, 45, 0.15);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+  border-top: 1px solid rgba(45, 90, 45, 0.18);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -50,7 +88,7 @@ body.app-mode .back-to-top {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   color: var(--text-secondary, #555);
   text-decoration: none;
   font-size: 0.72rem;
@@ -67,6 +105,38 @@ body.app-mode .back-to-top {
 }
 
 .app-tab-item.active {
+  color: var(--primary, #2d5a2d);
+  font-weight: 700;
+}
+
+/* Nút Quét QR Nổi Bật Ở Trung Tâm Tab Bar */
+.app-tab-scan-center {
+  position: relative;
+  overflow: visible;
+}
+
+.app-tab-scan-bubble {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary, #2d5a2d) 0%, var(--primary-light, #4a8b4a) 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(45, 90, 45, 0.4);
+  border: 2px solid var(--cream-light, #faf7f2);
+  margin-top: -16px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.app-tab-scan-center:hover .app-tab-scan-bubble,
+.app-tab-scan-center.active .app-tab-scan-bubble {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 18px rgba(45, 90, 45, 0.55);
+}
+
+.app-tab-scan-center.active span {
   color: var(--primary, #2d5a2d);
   font-weight: 700;
 }

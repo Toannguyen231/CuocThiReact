@@ -58,10 +58,31 @@ export default function HomePage() {
         subtitle="Từ một chiếc chiếu truyền thống, chúng tôi tạo nên những sản phẩm mang giá trị mới — gìn giữ nghề xưa, lan tỏa bản sắc văn hóa dân tộc và kiến tạo tương lai xanh."
         image="/assets/images/hero_banner.jpg"
         cta={
-          <Link to="/san-pham" className="hero-cta">
-            Khám phá sản phẩm
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </Link>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <Link to="/san-pham" className="hero-cta">
+              Khám phá sản phẩm
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </Link>
+            <Link
+              to="/quet-ma"
+              className="hero-cta"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                border: '1.5px solid rgba(255, 255, 255, 0.6)',
+                backdropFilter: 'blur(8px)'
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                <rect x="7" y="7" width="10" height="10" rx="1.5"></rect>
+              </svg>
+              Quét mã / Xác thực
+            </Link>
+          </div>
         }
       />
 
