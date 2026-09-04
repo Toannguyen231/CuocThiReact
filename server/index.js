@@ -145,7 +145,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   const user = publicUser(adminUser)
-  const token = jwt.sign(user, JWT_SECRET, { expiresIn: '7d' })
+  const token = jwt.sign(user, JWT_SECRET, { expiresIn: '8h' })
   res.json({ token, user })
 })
 

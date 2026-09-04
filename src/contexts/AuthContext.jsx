@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { getApiUrl } from '../utils/api'
 
 const AuthContext = createContext()
@@ -10,18 +10,62 @@ export function AuthProvider({ children }) {
   const [admin, setAdmin] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY)
+    setToken(null)
+    setAdmin(null)
+  }, [])
+
   useEffect(() => {
-    if (token) {
-      fetch(getApiUrl('/api/auth/me'), {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-        .then(res => res.ok ? res.json() : Promise.reject())
-        .then(data => { setAdmin(data.user); setLoading(false) })
-        .catch(() => { logout(); setLoading(false) })
-    } else {
+    if (!token) {
+      setAdmin(null)
       setLoading(false)
+      return
     }
-  }, [token])
+
+    const controller = new AbortController()
+
+    const verifyToken = async () => {
+      try {
+        const res = await fetch(getApiUrl('/api/auth/me'), {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: controller.signal
+        })
+
+        // Kiểm tra content-type phải là JSON (phòng trường hợp Vercel SPA rewrite trả về HTML)
+        const contentType = res.headers.get('content-type') || ''
+        if (!contentType.includes('application/json')) {
+          throw new Error('Response is not JSON — likely no backend configured')
+        }
+
+        if (!res.ok) {
+          throw new Error('Token invalid or expired')
+        }
+
+        const data = await res.json()
+
+        // Kiểm tra response phải có cấu trúc hợp lệ từ server
+        if (!data || !data.user || !data.user.username) {
+          throw new Error('Invalid response structure')
+        }
+
+        setAdmin(data.user)
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.warn('Admin auth verification failed:', err.message)
+          logout()
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    verifyToken()
+
+    return () => controller.abort()
+  }, [token, logout])
 
   const login = async (username, password) => {
     const res = await fetch(getApiUrl('/api/auth/login'), {
@@ -29,21 +73,27 @@ export function AuthProvider({ children }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     })
+
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      throw new Error('Không thể kết nối tới máy chủ. Vui lòng thử lại sau.')
+    }
+
     if (!res.ok) {
       const err = await res.json()
       throw new Error(err.message || 'Đăng nhập thất bại')
     }
+
     const data = await res.json()
+
+    if (!data.token || !data.user) {
+      throw new Error('Phản hồi từ máy chủ không hợp lệ')
+    }
+
     localStorage.setItem(TOKEN_KEY, data.token)
     setToken(data.token)
     setAdmin(data.user)
     return data
-  }
-
-  const logout = () => {
-    localStorage.removeItem(TOKEN_KEY)
-    setToken(null)
-    setAdmin(null)
   }
 
   const isAdmin = !!admin
