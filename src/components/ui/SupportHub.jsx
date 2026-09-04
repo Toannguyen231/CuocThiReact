@@ -7,7 +7,7 @@ const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/
 
 const FB_MESSENGER_LINK = 'https://www.facebook.com/profile.php?id=61593590940438'
 const FB_CHAT_LINK = 'https://m.me/61593590940438'
-const ZALO_PHONE = '0901234567'
+const ZALO_PHONE = '0909055594'
 const ZALO_LINK = `https://zalo.me/${ZALO_PHONE}`
 
 const SYSTEM_INSTRUCTION = `Bạn là "Trợ lý ảo Chiếu Nẫu" — đại diện hỗ trợ khách hàng thân thiện, am hiểu và nhiệt tình của thương hiệu Chiếu Nẫu (Gìn Nghề — Giữ Sinh Kế).
