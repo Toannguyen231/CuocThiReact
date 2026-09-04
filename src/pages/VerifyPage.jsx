@@ -5,7 +5,7 @@ import { products } from '../data/products'
 
 /**
  * Trang xác thực / kiểm tra nguồn gốc sản phẩm Chiếu Nẫu
- * Tích hợp Camera QR Scanner thật (qua thư viện html5-qrcode) + Tải ảnh QR + Nhập mã thủ công
+ * Tích hợp Camera QR Scanner thời gian thực (html5-qrcode) với khung quét và video viewfinder hiển thị rõ ràng
  * Route: /quet-ma hoặc /quet-ma.html
  */
 export default function VerifyPage() {
@@ -21,7 +21,7 @@ export default function VerifyPage() {
   const html5QrCodeRef = useRef(null)
   const fileInputRef = useRef(null)
 
-  // Hàm trích xuất mã code từ chuỗi quét được (chấp nhận cả url đầy đủ lẫn chuỗi mã đơn thuần)
+  // Trích xuất mã sản phẩm từ chuỗi quét được
   const extractCodeFromScan = (decodedText) => {
     try {
       if (decodedText.includes('quet-ma?code=')) {
@@ -38,7 +38,7 @@ export default function VerifyPage() {
     return decodedText.trim()
   }
 
-  // Hàm tra cứu sản phẩm dựa trên ID hoặc slug
+  // Tra cứu sản phẩm theo ID hoặc slug
   const lookupProduct = (code) => {
     if (!code) return null
     const query = code.trim().toLowerCase()
@@ -58,13 +58,18 @@ export default function VerifyPage() {
     }
   }, [searchParams])
 
-  // Dừng camera an toàn khi unmount
+  // Dọn dẹp camera an toàn khi unmount
   useEffect(() => {
     return () => {
-      if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-        html5QrCodeRef.current
-          .stop()
-          .catch((err) => console.warn('Lỗi khi dừng camera:', err))
+      if (html5QrCodeRef.current) {
+        try {
+          html5QrCodeRef.current
+            .stop()
+            .then(() => html5QrCodeRef.current.clear())
+            .catch(() => {})
+        } catch {
+          // ignore
+        }
       }
     }
   }, [])
@@ -73,6 +78,12 @@ export default function VerifyPage() {
   const startScanner = async () => {
     setScannerError('')
     setCameraLoading(true)
+    // Chuyển isScanning = true ngay để DOM phần tử #qr-reader-region được hiển thị cho html5-qrcode tính toán kích thước
+    setIsScanning(true)
+
+    // Đợi 1 tick để DOM mount và hiển thị đúng layout
+    await new Promise((resolve) => setTimeout(resolve, 80))
+
     try {
       if (!html5QrCodeRef.current) {
         html5QrCodeRef.current = new Html5Qrcode('qr-reader-region')
@@ -86,30 +97,29 @@ export default function VerifyPage() {
         setSearchedProduct(found || null)
         setHasSearched(true)
 
-        // Dừng scanner sau khi đã quét thành công
+        // Tự động dừng camera sau khi đã quét được
         stopScanner()
       }
 
       const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
+        fps: 15,
+        qrbox: { width: 220, height: 220 },
         aspectRatio: 1.0
       }
 
       await html5QrCodeRef.current.start(
-        { facingMode: 'environment' }, // Ưu tiên camera sau trên điện thoại
+        { facingMode: 'environment' },
         config,
         qrCodeSuccessCallback,
         () => {
-          // Frame scan error (bỏ qua frame trống để không spam log)
+          // Bỏ qua frame không có QR để mượt video
         }
       )
-
-      setIsScanning(true)
     } catch (err) {
       console.error('Không thể mở camera:', err)
+      setIsScanning(false)
       setScannerError(
-        'Không thể truy cập camera. Vui lòng cấp quyền truy cập camera cho trình duyệt hoặc thử tải ảnh chứa mã QR lên.'
+        'Không thể mở camera (có thể do chưa cấp quyền hoặc đang bị ứng dụng khác chiếm dụng). Bạn có thể dùng nút "Chọn ảnh từ máy" hoặc nhập mã thủ công bên dưới.'
       )
     } finally {
       setCameraLoading(false)
@@ -118,9 +128,10 @@ export default function VerifyPage() {
 
   // Tắt camera
   const stopScanner = async () => {
-    if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+    if (html5QrCodeRef.current) {
       try {
         await html5QrCodeRef.current.stop()
+        html5QrCodeRef.current.clear()
       } catch (err) {
         console.warn('Lỗi khi tắt scanner:', err)
       }
@@ -128,7 +139,7 @@ export default function VerifyPage() {
     setIsScanning(false)
   }
 
-  // Quét mã QR từ file ảnh người dùng tải lên
+  // Quét từ file ảnh
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -146,7 +157,7 @@ export default function VerifyPage() {
       setHasSearched(true)
     } catch (err) {
       console.warn('Không đọc được mã từ ảnh:', err)
-      setScannerError('Không tìm thấy mã QR hợp lệ trong bức ảnh này. Vui lòng thử lại với ảnh rõ nét hơn.')
+      setScannerError('Không tìm thấy mã QR trong bức ảnh này. Vui lòng thử lại với ảnh rõ nét hơn.')
     } finally {
       e.target.value = ''
     }
@@ -185,21 +196,63 @@ export default function VerifyPage() {
             textAlign: 'center',
             marginBottom: '2rem',
             boxShadow: 'var(--shadow-sm)',
-            position: 'relative'
+            position: 'relative',
+            overflow: 'hidden'
           }}
         >
-          {/* Vùng hiển thị video camera của html5-qrcode */}
+          {/* Vùng Viewfinder Camera */}
           <div
-            id="qr-reader-region"
             style={{
+              position: 'relative',
               width: '100%',
               maxWidth: '360px',
               margin: '0 auto',
-              borderRadius: '12px',
-              overflow: 'hidden',
               display: isScanning ? 'block' : 'none'
             }}
-          ></div>
+          >
+            {/* Div gắn html5-qrcode video element */}
+            <div
+              id="qr-reader-region"
+              style={{
+                width: '100%',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                backgroundColor: '#000000'
+              }}
+            ></div>
+
+            {/* Khung ngắm định vị và hiệu ứng laser quét trực quan */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                pointerEvents: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <div
+                style={{
+                  width: '220px',
+                  height: '220px',
+                  border: '2px solid rgba(255, 255, 255, 0.8)',
+                  borderRadius: '12px',
+                  boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.35)',
+                  position: 'relative'
+                }}
+              >
+                {/* 4 góc căn ngắm */}
+                <div style={{ position: 'absolute', top: '-2px', left: '-2px', width: '20px', height: '20px', borderTop: '4px solid #4a8b4a', borderLeft: '4px solid #4a8b4a', borderTopLeftRadius: '10px' }} />
+                <div style={{ position: 'absolute', top: '-2px', right: '-2px', width: '20px', height: '20px', borderTop: '4px solid #4a8b4a', borderRight: '4px solid #4a8b4a', borderTopRightRadius: '10px' }} />
+                <div style={{ position: 'absolute', bottom: '-2px', left: '-2px', width: '20px', height: '20px', borderBottom: '4px solid #4a8b4a', borderLeft: '4px solid #4a8b4a', borderBottomLeftRadius: '10px' }} />
+                <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '20px', height: '20px', borderBottom: '4px solid #4a8b4a', borderRight: '4px solid #4a8b4a', borderBottomRightRadius: '10px' }} />
+              </div>
+            </div>
+          </div>
 
           {!isScanning ? (
             <div>
@@ -229,7 +282,7 @@ export default function VerifyPage() {
                 Camera Quét Mã QR Trực Tiếp
               </h3>
               <p style={{ margin: '0 auto 16px auto', fontSize: '0.88rem', color: 'var(--text-secondary)', maxWidth: '400px' }}>
-                Đưa camera điện thoại hướng vào mã QR in trên sản phẩm để tự động nhận diện tức thì.
+                Bấm nút bên dưới để mở màn hình camera và hướng vào mã QR in trên sản phẩm.
               </p>
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -245,18 +298,19 @@ export default function VerifyPage() {
                     padding: '11px 22px',
                     fontSize: '0.92rem',
                     fontWeight: 600,
-                    cursor: 'pointer',
+                    cursor: cameraLoading ? 'not-allowed' : 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 14px rgba(45, 90, 45, 0.3)'
+                    boxShadow: '0 4px 14px rgba(45, 90, 45, 0.3)',
+                    opacity: cameraLoading ? 0.75 : 1
                   }}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                     <circle cx="12" cy="13" r="4"></circle>
                   </svg>
-                  {cameraLoading ? 'Đang khởi động camera...' : 'Bật Camera Quét Mã'}
+                  {cameraLoading ? 'Đang mở màn hình quét...' : 'Mở Camera Quét Mã'}
                 </button>
 
                 <input
@@ -293,9 +347,9 @@ export default function VerifyPage() {
               </div>
             </div>
           ) : (
-            <div style={{ marginTop: '12px' }}>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                Đang quét... Hãy giữ mã QR nằm trong khung hình.
+            <div style={{ marginTop: '14px' }}>
+              <p style={{ fontSize: '0.88rem', color: 'var(--primary-dark)', fontWeight: 600, marginBottom: '10px' }}>
+                Đang quét... Căn mã QR vào giữa khung hình bên trên
               </p>
               <button
                 type="button"
@@ -305,13 +359,20 @@ export default function VerifyPage() {
                   color: '#d32f2f',
                   border: '1.5px solid #d32f2f',
                   borderRadius: '8px',
-                  padding: '8px 18px',
+                  padding: '8px 20px',
                   fontSize: '0.85rem',
                   fontWeight: 600,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
-                Dừng Camera
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Tắt Màn Hình Quét
               </button>
             </div>
           )}
