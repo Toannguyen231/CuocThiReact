@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "pwa:icons": "node scripts/generate-pwa-icons.mjs",
     "server": "node server/index.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\""
   },
@@ -24,6 +25,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.0",
-    "vite": "^6.0.0"
+    "sharp": "^0.35.4",
+    "vite": "^6.0.0",
+    "vite-plugin-pwa": "^1.3.0"
   }
 }

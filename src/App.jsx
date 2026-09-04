@@ -6,6 +6,8 @@ import PageLoader from './components/layout/PageLoader'
 import BackToTop from './components/layout/BackToTop'
 import CartDrawer from './components/ui/CartDrawer'
 import SupportHub from './components/ui/SupportHub'
+import PWAInstallBanner from './components/ui/PWAInstallBanner'
+import PWAUpdateToast from './components/ui/PWAUpdateToast'
 
 import HomePage from './pages/HomePage'
 import StoryPage from './pages/StoryPage'
@@ -18,6 +20,7 @@ import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import OrderSuccessPage from './pages/OrderSuccessPage'
 import AccountPage from './pages/AccountPage'
+import OfflinePage from './pages/OfflinePage'
 
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -61,7 +64,7 @@ function App() {
       <ScrollToTop />
       {!isAdmin && <Navbar solid={!hasPageHero} />}
       {!isAdmin && <CartDrawer />}
-      
+
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
@@ -83,6 +86,7 @@ function App() {
         <Route path="/dang-nhap" element={<AccountPage />} />
         <Route path="/dang-ky" element={<AccountPage />} />
         <Route path="/tai-khoan" element={<AccountPage />} />
+        <Route path="/offline" element={<OfflinePage />} />
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -116,6 +120,8 @@ function App() {
       {!isAdmin && <Footer />}
       {!isAdmin && <SupportHub />}
       <BackToTop />
+      {!isAdmin && <PWAInstallBanner />}
+      {!isAdmin && <PWAUpdateToast />}
     </>
   )
 }
