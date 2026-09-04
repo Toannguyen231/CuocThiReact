@@ -16,6 +16,7 @@
     "concurrently": "^9.0.0",
     "cors": "^2.8.5",
     "express": "^4.21.0",
+    "html5-qrcode": "^2.3.8",
     "jsonwebtoken": "^9.0.0",
     "leaflet": "^1.9.4",
     "react": "^19.0.0",

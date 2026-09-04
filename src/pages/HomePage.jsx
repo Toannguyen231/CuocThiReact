@@ -58,7 +58,7 @@ export default function HomePage() {
         subtitle="Từ một chiếc chiếu truyền thống, chúng tôi tạo nên những sản phẩm mang giá trị mới — gìn giữ nghề xưa, lan tỏa bản sắc văn hóa dân tộc và kiến tạo tương lai xanh."
         image="/assets/images/hero_banner.jpg"
         cta={
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
             <Link to="/san-pham" className="hero-cta">
               Khám phá sản phẩm
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -69,8 +69,9 @@ export default function HomePage() {
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.15)',
                 color: '#ffffff',
-                border: '1.5px solid rgba(255, 255, 255, 0.6)',
-                backdropFilter: 'blur(8px)'
+                border: '1.5px solid rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)'
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
