@@ -54,6 +54,26 @@ export default function ProductDetailPage() {
 
               <div className="product-price-tag">{product.priceDisplay}</div>
 
+              <div style={{ margin: '-0.5rem 0 1.25rem 0' }}>
+                <Link
+                  to={`/quet-ma?code=${product.slug}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.85rem',
+                    color: 'var(--primary)',
+                    textDecoration: 'none',
+                    fontWeight: 600
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                  Kiểm tra hàng thật →
+                </Link>
+              </div>
+
               <div className="product-add-to-cart">
                 <div className="qty-selector">
                   <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>

@@ -2,13 +2,17 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useCart } from '../contexts/CartContext'
 import { useCustomerAuth } from '../contexts/CustomerAuthContext'
+import { useAppMode } from '../hooks/useAppMode'
+import { APP_PROMO } from '../utils/appPromo'
 import { formatPrice, getApiUrl } from '../utils/api'
 import AddressMapPicker from '../components/ui/AddressMapPicker'
 
 export default function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useCart()
   const { customer } = useCustomerAuth()
+  const { isApp } = useAppMode()
   const navigate = useNavigate()
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
@@ -21,8 +25,21 @@ export default function CheckoutPage() {
     shippingMethod: 'standard'
   })
 
+  // Quản lý voucher giảm giá độc quyền app
+  const [voucherInput, setVoucherInput] = useState('')
+  const [appliedVoucher, setAppliedVoucher] = useState(null)
+  const [voucherError, setVoucherError] = useState('')
+
   const shippingFee = form.shippingMethod === 'express' ? 30000 : 0
-  const grandTotal = cartTotal + shippingFee
+
+  // Tính số tiền giảm giá:
+  // CHÚ THÍCH KỸ THUẬT:
+  // Backend server/index.js tự tính lại subtotal từ giá sản phẩm và cộng shippingFee (subtotal + shippingFee).
+  // Khi có voucher (chỉ cho phép trong chế độ isApp), frontend tính discount = 10% subtotal.
+  // Chúng tôi gửi voucherCode và discount trong body và ghi chú vào trường note (hoặc thông tin đơn)
+  // để đảm bảo backend nhận đầy đủ metadata mà không gây lỗi hoặc xung đột tính toán.
+  const discountAmount = appliedVoucher ? Math.round((cartTotal * appliedVoucher.percent) / 100) : 0
+  const grandTotal = Math.max(0, cartTotal - discountAmount + shippingFee)
 
   useEffect(() => {
     if (!customer) return
@@ -48,6 +65,34 @@ export default function CheckoutPage() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
+  const handleApplyVoucher = (e) => {
+    e.preventDefault()
+    setVoucherError('')
+    const cleanCode = voucherInput.trim().toUpperCase()
+
+    if (!cleanCode) {
+      setVoucherError('Vui lòng nhập mã ưu đãi.')
+      return
+    }
+
+    if (cleanCode === APP_PROMO.code) {
+      if (!isApp) {
+        setVoucherError('Mã ưu đãi APP10 chỉ áp dụng khi mua hàng trên App Chiếu Nẫu đã cài đặt.')
+        return
+      }
+      setAppliedVoucher(APP_PROMO)
+      setVoucherError('')
+    } else {
+      setVoucherError('Mã giảm giá không hợp lệ hoặc đã hết hạn.')
+    }
+  }
+
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null)
+    setVoucherInput('')
+    setVoucherError('')
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.customerName || !form.phone || !form.address) {
@@ -57,11 +102,19 @@ export default function CheckoutPage() {
     setLoading(true)
     setError('')
     try {
+      // Ghi chú voucher vào đơn nếu có
+      const finalNote = appliedVoucher
+        ? `${form.note ? form.note + ' | ' : ''}[App Promo: ${appliedVoucher.code} - Giảm ${formatPrice(discountAmount)}]`
+        : form.note
+
       const res = await fetch(getApiUrl('/api/orders'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          note: finalNote,
+          voucherCode: appliedVoucher ? appliedVoucher.code : null,
+          discount: discountAmount,
           items: cart.map(item => ({ productId: item.id, quantity: item.quantity, price: item.price })),
           subtotal: cartTotal,
           shippingFee,
@@ -178,14 +231,105 @@ export default function CheckoutPage() {
               </li>
             ))}
           </ul>
+
+          {/* Ô nhập mã ưu đãi */}
+          <div style={{ marginTop: '1.25rem', marginBottom: '1.25rem', paddingTop: '1rem', borderTop: '1px dashed var(--accent, #b5b89a)' }}>
+            <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, marginBottom: '6px', color: 'var(--primary-dark)' }}>
+              Mã ưu đãi
+            </label>
+            {!appliedVoucher ? (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  value={voucherInput}
+                  onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
+                  placeholder={isApp ? 'Nhập APP10' : 'Mã giảm giá (nếu có)'}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #ccc',
+                    fontSize: '0.9rem',
+                    textTransform: 'uppercase'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyVoucher}
+                  style={{
+                    backgroundColor: 'var(--primary, #2d5a2d)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Áp dụng
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  backgroundColor: 'rgba(45, 90, 45, 0.08)',
+                  border: '1px solid var(--primary, #2d5a2d)',
+                  borderRadius: '8px',
+                  padding: '8px 12px'
+                }}
+              >
+                <div>
+                  <strong style={{ color: 'var(--primary, #2d5a2d)', fontSize: '0.9rem' }}>
+                    {appliedVoucher.code}
+                  </strong>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '6px' }}>
+                    ({appliedVoucher.label})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveVoucher}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#d4738a',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.82rem'
+                  }}
+                >
+                  Gỡ bỏ
+                </button>
+              </div>
+            )}
+            {voucherError && (
+              <p style={{ color: '#d32f2f', fontSize: '0.82rem', marginTop: '6px', marginBottom: 0 }}>
+                {voucherError}
+              </p>
+            )}
+          </div>
+
           <div className="summary-row summary-row-divider">
             <span>Tạm tính</span>
             <strong>{formatPrice(cartTotal)}</strong>
           </div>
+
+          {appliedVoucher && (
+            <div className="summary-row" style={{ color: 'var(--primary, #2d5a2d)' }}>
+              <span>Ưu đãi app {appliedVoucher.code} (−{appliedVoucher.percent}%)</span>
+              <strong>−{formatPrice(discountAmount)}</strong>
+            </div>
+          )}
+
           <div className="summary-row">
             <span>Vận chuyển</span>
             <strong>{shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}</strong>
           </div>
+
           <div className="summary-row summary-total summary-row-strong">
             <span>Tổng cộng:</span>
             <strong style={{ fontSize: '1.25rem', color: 'var(--primary)' }}>{formatPrice(grandTotal)}</strong>

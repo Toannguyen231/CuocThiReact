@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       strategies: 'generateSW',
-      registerType: 'prompt', // Hiện toast update, không autoUpdate âm thầm
+      registerType: 'prompt', // Hiện toast update để người dùng chủ động làm mới, không autoUpdate âm thầm
       includeAssets: ['logo.png', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
         name: 'Chiếu Nẫu - Gìn Nghề, Giữ Sinh Kế',

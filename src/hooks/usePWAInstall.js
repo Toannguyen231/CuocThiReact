@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { checkStandalone } from '../utils/standalone'
 
 /**
  * Custom hook quản lý sự kiện cài đặt PWA (beforeinstallprompt)
@@ -9,12 +10,11 @@ import { useState, useEffect } from 'react'
  */
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
-  const [isInstalled, setIsInstalled] = useState(false)
+  const [isInstalled, setIsInstalled] = useState(() => checkStandalone())
 
   useEffect(() => {
     // Kiểm tra nếu đã chạy trong chế độ standalone (đã cài đặt)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
-    if (isStandalone) {
+    if (checkStandalone()) {
       setIsInstalled(true)
     }
 

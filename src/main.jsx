@@ -12,6 +12,7 @@ import './styles/admin.css'
 import './styles/auth.css'
 import './styles/map-picker.css'
 import './styles/support-hub.css'
+import './styles/app-mode.css'
 
 // Đăng ký Service Worker qua virtual:pwa-register với cơ chế prompt
 registerSW({

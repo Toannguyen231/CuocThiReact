@@ -9,6 +9,10 @@ import SupportHub from './components/ui/SupportHub'
 import PWAInstallBanner from './components/ui/PWAInstallBanner'
 import PWAUpdateToast from './components/ui/PWAUpdateToast'
 
+import AppSplash from './components/app/AppSplash'
+import BottomTabBar from './components/app/BottomTabBar'
+import AppPromoBanner from './components/app/AppPromoBanner'
+
 import HomePage from './pages/HomePage'
 import StoryPage from './pages/StoryPage'
 import ProductsPage from './pages/ProductsPage'
@@ -21,6 +25,7 @@ import CheckoutPage from './pages/CheckoutPage'
 import OrderSuccessPage from './pages/OrderSuccessPage'
 import AccountPage from './pages/AccountPage'
 import OfflinePage from './pages/OfflinePage'
+import VerifyPage from './pages/VerifyPage'
 
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -60,6 +65,9 @@ function App() {
 
   return (
     <>
+      {/* Splash screen PWA độc quyền (tự kiểm tra điều kiện isApp bên trong component) */}
+      <AppSplash />
+
       <PageLoader />
       <ScrollToTop />
       {!isAdmin && <Navbar solid={!hasPageHero} />}
@@ -87,6 +95,8 @@ function App() {
         <Route path="/dang-ky" element={<AccountPage />} />
         <Route path="/tai-khoan" element={<AccountPage />} />
         <Route path="/offline" element={<OfflinePage />} />
+        <Route path="/quet-ma" element={<VerifyPage />} />
+        <Route path="/quet-ma.html" element={<VerifyPage />} />
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -122,6 +132,10 @@ function App() {
       <BackToTop />
       {!isAdmin && <PWAInstallBanner />}
       {!isAdmin && <PWAUpdateToast />}
+
+      {/* App-mode components (Bottom Tab Bar và Banner Voucher APP10) */}
+      <BottomTabBar />
+      <AppPromoBanner />
     </>
   )
 }
