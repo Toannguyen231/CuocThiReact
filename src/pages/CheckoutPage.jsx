@@ -150,6 +150,7 @@ export default function CheckoutPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...form,
+            isApp,
             note: finalNote,
             voucherCode: appliedVoucher ? appliedVoucher.code : null,
             discount: discountAmount,
