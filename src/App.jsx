@@ -33,6 +33,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminOrderDetail from './pages/admin/AdminOrderDetail'
 import AdminProducts from './pages/admin/AdminProducts'
+import AdminVouchers from './pages/admin/AdminVouchers'
 import AdminLiveChat from './pages/admin/AdminLiveChat'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminLayout from './components/admin/AdminLayout'
@@ -107,6 +108,7 @@ function App() {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="orders/:id" element={<AdminOrderDetail />} />
           <Route path="products" element={<AdminProducts />} />
+          <Route path="vouchers" element={<AdminVouchers />} />
           <Route path="chat" element={<AdminLiveChat />} />
           <Route path="users" element={<AdminUsers />} />
         </Route>

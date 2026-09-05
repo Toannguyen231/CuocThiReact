@@ -40,20 +40,16 @@ export default function CheckoutPage() {
     }
   }, [])
 
-  // Quản lý voucher giảm giá độc quyền app
+  // Quản lý voucher giảm giá độc quyền app & khuyến mãi động (Phase 2)
   const [voucherInput, setVoucherInput] = useState('')
   const [appliedVoucher, setAppliedVoucher] = useState(null)
   const [voucherError, setVoucherError] = useState('')
+  const [checkingVoucher, setCheckingVoucher] = useState(false)
 
   const shippingFee = form.shippingMethod === 'express' ? 30000 : 0
 
-  // Tính số tiền giảm giá:
-  // CHÚ THÍCH KỸ THUẬT:
-  // Backend server/index.js tự tính lại subtotal từ giá sản phẩm và cộng shippingFee (subtotal + shippingFee).
-  // Khi có voucher (chỉ cho phép trong chế độ isApp), frontend tính discount = 10% subtotal.
-  // Chúng tôi gửi voucherCode và discount trong body và ghi chú vào trường note (hoặc thông tin đơn)
-  // để đảm bảo backend nhận đầy đủ metadata mà không gây lỗi hoặc xung đột tính toán.
-  const discountAmount = appliedVoucher ? Math.round((cartTotal * appliedVoucher.percent) / 100) : 0
+  // Tính số tiền giảm giá động từ kết quả server kiểm tra
+  const discountAmount = appliedVoucher ? appliedVoucher.discountAmount : 0
   const grandTotal = Math.max(0, cartTotal - discountAmount + shippingFee)
 
   useEffect(() => {
@@ -80,7 +76,7 @@ export default function CheckoutPage() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
-  const handleApplyVoucher = (e) => {
+  const handleApplyVoucher = async (e) => {
     e.preventDefault()
     setVoucherError('')
     const cleanCode = voucherInput.trim().toUpperCase()
@@ -90,15 +86,36 @@ export default function CheckoutPage() {
       return
     }
 
-    if (cleanCode === APP_PROMO.code) {
-      if (!isApp) {
-        setVoucherError('Mã ưu đãi APP10 chỉ áp dụng khi mua hàng trên App Chiếu Nẫu đã cài đặt.')
-        return
+    setCheckingVoucher(true)
+    try {
+      const res = await fetch(getApiUrl('/api/vouchers/check'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: cleanCode,
+          subtotal: cartTotal,
+          isApp,
+          phone: form.phone,
+          email: form.email
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.valid) {
+        setAppliedVoucher({
+          code: data.voucher.code,
+          description: data.voucher.description,
+          discountAmount: data.voucher.discountAmount,
+          discountPercent: data.voucher.discountPercent,
+          appOnly: data.voucher.appOnly
+        })
+        setVoucherError('')
+      } else {
+        setVoucherError(data.message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn.')
       }
-      setAppliedVoucher(APP_PROMO)
-      setVoucherError('')
-    } else {
-      setVoucherError('Mã giảm giá không hợp lệ hoặc đã hết hạn.')
+    } catch {
+      setVoucherError('Không thể kiểm tra mã giảm giá lúc này.')
+    } finally {
+      setCheckingVoucher(false)
     }
   }
 
@@ -312,6 +329,7 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={handleApplyVoucher}
+                  disabled={checkingVoucher}
                   style={{
                     backgroundColor: 'var(--primary, #2d5a2d)',
                     color: '#fff',
@@ -320,10 +338,11 @@ export default function CheckoutPage() {
                     padding: '8px 16px',
                     fontSize: '0.88rem',
                     fontWeight: 600,
-                    cursor: 'pointer'
+                    cursor: checkingVoucher ? 'not-allowed' : 'pointer',
+                    opacity: checkingVoucher ? 0.7 : 1
                   }}
                 >
-                  Áp dụng
+                  {checkingVoucher ? 'Đang kiểm tra...' : 'Áp dụng'}
                 </button>
               </div>
             ) : (
@@ -343,7 +362,7 @@ export default function CheckoutPage() {
                     {appliedVoucher.code}
                   </strong>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '6px' }}>
-                    ({appliedVoucher.label})
+                    ({appliedVoucher.description || 'Đã áp dụng giảm giá'})
                   </span>
                 </div>
                 <button
@@ -376,7 +395,10 @@ export default function CheckoutPage() {
 
           {appliedVoucher && (
             <div className="summary-row" style={{ color: 'var(--primary, #2d5a2d)' }}>
-              <span>Ưu đãi app {appliedVoucher.code} (−{appliedVoucher.percent}%)</span>
+              <span>
+                Mã {appliedVoucher.code}
+                {appliedVoucher.discountPercent ? ` (−${appliedVoucher.discountPercent}%)` : ''}
+              </span>
               <strong>−{formatPrice(discountAmount)}</strong>
             </div>
           )}

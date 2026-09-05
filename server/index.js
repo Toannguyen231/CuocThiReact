@@ -25,6 +25,37 @@ const adminUser = {
   role: 'admin'
 }
 
+const seedVouchers = [
+  {
+    id: 1,
+    code: 'APP10',
+    description: 'Ưu đãi độc quyền ứng dụng Chiếu Nẫu: Giảm 10% đơn hàng đầu tiên',
+    discountPercent: 10,
+    maxDiscount: 100000, // Tối đa 100k
+    minOrderValue: 0,
+    appOnly: true,
+    oncePerCustomer: true, // 1 lần duy nhất cho mỗi số điện thoại / email
+    usageLimit: 500,
+    usedCount: 0,
+    active: true,
+    created_at: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    id: 2,
+    code: 'CHIEUNAU20',
+    description: 'Mừng ra mắt bộ sưu tập mới: Giảm 20.000₫ cho đơn từ 200.000₫',
+    discountAmountFixed: 20000,
+    discountPercent: 0,
+    minOrderValue: 200000,
+    appOnly: false,
+    oncePerCustomer: false,
+    usageLimit: 200,
+    usedCount: 0,
+    active: true,
+    created_at: '2026-02-01T00:00:00.000Z'
+  }
+]
+
 const normalizeProduct = (product) => ({
   ...product,
   active: product.active ?? true,
@@ -45,7 +76,8 @@ const seedStore = () => ({
     }))
   ],
   users: [],
-  orders: []
+  orders: [],
+  vouchers: seedVouchers
 })
 
 function normalizeStore(store) {
@@ -54,7 +86,8 @@ function normalizeStore(store) {
     products: store.products || [],
     users: store.users || [],
     orders: store.orders || [],
-    liveChats: store.liveChats || []
+    liveChats: store.liveChats || [],
+    vouchers: store.vouchers && store.vouchers.length > 0 ? store.vouchers : seedVouchers
   }
 }
 
@@ -231,29 +264,87 @@ app.get('/api/products/:slug', async (req, res) => {
   res.json({ product })
 })
 
+// ─── Phase 2: Dynamic Voucher Engine ───
+// Kiểm tra mã voucher công khai (dành cho checkout UI)
+app.post('/api/vouchers/check', async (req, res) => {
+  const store = await readStore()
+  const { code, subtotal = 0, isApp = false, phone = '', email = '' } = req.body
+
+  if (!code) {
+    return res.status(400).json({ message: 'Vui lòng nhập mã giảm giá' })
+  }
+
+  const cleanCode = String(code).trim().toUpperCase()
+  const voucher = (store.vouchers || []).find((v) => v.code === cleanCode && v.active !== false)
+
+  if (!voucher) {
+    return res.status(400).json({ message: 'Mã giảm giá không tồn tại hoặc đã hết hạn' })
+  }
+
+  // 1. Kiểm tra điều kiện App-only
+  if (voucher.appOnly && !isApp) {
+    return res.status(400).json({
+      message: `Mã ${cleanCode} chỉ áp dụng độc quyền trên App Chiếu Nẫu (PWA)`
+    })
+  }
+
+  // 2. Kiểm tra giá trị đơn hàng tối thiểu
+  if (voucher.minOrderValue && Number(subtotal) < voucher.minOrderValue) {
+    return res.status(400).json({
+      message: `Đơn hàng tối thiểu ${voucher.minOrderValue.toLocaleString('vi-VN')}₫ để áp dụng mã này`
+    })
+  }
+
+  // 3. Kiểm tra số lượt sử dụng tổng thể
+  if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) {
+    return res.status(400).json({ message: 'Mã giảm giá đã hết lượt sử dụng' })
+  }
+
+  // 4. Kiểm tra giới hạn 1 lần duy nhất cho mỗi khách hàng (dựa trên SĐT hoặc Email)
+  if (voucher.oncePerCustomer && (phone || email)) {
+    const hasUsed = (store.orders || []).some(
+      (o) =>
+        o.voucher_code === cleanCode &&
+        o.status !== 'cancelled' &&
+        ((phone && o.phone === String(phone).trim()) || (email && o.email === String(email).trim().toLowerCase()))
+    )
+    if (hasUsed) {
+      return res.status(400).json({
+        message: `Khách hàng này đã sử dụng mã ${cleanCode} cho đơn hàng trước đó`
+      })
+    }
+  }
+
+  // 5. Tính số tiền giảm
+  let discountAmount = 0
+  if (voucher.discountPercent) {
+    discountAmount = Math.round((Number(subtotal) * voucher.discountPercent) / 100)
+    if (voucher.maxDiscount) {
+      discountAmount = Math.min(discountAmount, voucher.maxDiscount)
+    }
+  } else if (voucher.discountAmountFixed) {
+    discountAmount = Math.min(voucher.discountAmountFixed, Number(subtotal))
+  }
+
+  res.json({
+    valid: true,
+    voucher: {
+      code: voucher.code,
+      description: voucher.description,
+      discountAmount,
+      discountPercent: voucher.discountPercent || 0,
+      appOnly: !!voucher.appOnly,
+      oncePerCustomer: !!voucher.oncePerCustomer
+    }
+  })
+})
+
 app.post('/api/orders', async (req, res) => {
   const store = await readStore()
-  const { customerName, phone, email, address, note, paymentMethod, shippingMethod, items = [], voucherCode = null, discount = 0 } = req.body
+  const { customerName, phone, email, address, note, paymentMethod, shippingMethod, items = [], voucherCode = null, discount = 0, isApp = false } = req.body
 
   if (!customerName || !phone || !address || items.length === 0) {
     return res.status(400).json({ message: 'Vui lòng kiểm tra thông tin đơn hàng' })
-  }
-
-  // Phase 1.6: validate server-side tối thiểu, Phase 2 chuyển sang bảng vouchers + giới hạn 1 lần/user
-  const VALID_VOUCHERS = {
-    APP10: { percent: 10, description: 'Ưu đãi app: giảm 10% đơn đầu' }
-  }
-
-  let validatedVoucherCode = null
-  let discountPercent = 0
-
-  if (voucherCode) {
-    const cleanCode = String(voucherCode).trim().toUpperCase()
-    if (!VALID_VOUCHERS[cleanCode]) {
-      return res.status(400).json({ message: 'Mã giảm giá không hợp lệ hoặc đã hết hạn' })
-    }
-    validatedVoucherCode = cleanCode
-    discountPercent = VALID_VOUCHERS[cleanCode].percent
   }
 
   const orderItems = items.map((item) => {
@@ -273,15 +364,67 @@ app.post('/api/orders', async (req, res) => {
   const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const shippingFee = shippingMethod === 'express' ? 30000 : 0
 
-  // Server tính toán giảm giá và chặn client tự ý tăng discount
-  const calculatedDiscount = validatedVoucherCode ? Math.round((subtotal * discountPercent) / 100) : 0
-  const clientClaimedDiscount = Math.max(0, Number(discount) || 0)
-  // Lấy min giữa server tính và client gửi (nếu client gửi discount), đảm bảo không vượt quá calculatedDiscount
-  const discountAmount = validatedVoucherCode
-    ? Math.min(calculatedDiscount, clientClaimedDiscount > 0 ? clientClaimedDiscount : calculatedDiscount)
-    : 0
+  // ─── Phase 2: Validate Voucher qua Database ───
+  let validatedVoucherCode = null
+  let finalDiscountAmount = 0
+  let matchedVoucher = null
 
-  const total = Math.max(0, subtotal - discountAmount + shippingFee)
+  if (voucherCode) {
+    const cleanCode = String(voucherCode).trim().toUpperCase()
+    matchedVoucher = (store.vouchers || []).find((v) => v.code === cleanCode && v.active !== false)
+
+    if (!matchedVoucher) {
+      return res.status(400).json({ message: 'Mã giảm giá không tồn tại hoặc đã hết hạn' })
+    }
+
+    // Check App-only
+    if (matchedVoucher.appOnly && !isApp) {
+      return res.status(400).json({ message: `Mã ${cleanCode} chỉ áp dụng độc quyền trên App Chiếu Nẫu` })
+    }
+
+    // Check min order
+    if (matchedVoucher.minOrderValue && subtotal < matchedVoucher.minOrderValue) {
+      return res.status(400).json({ message: `Đơn hàng tối thiểu ${matchedVoucher.minOrderValue.toLocaleString('vi-VN')}₫` })
+    }
+
+    // Check usage limit
+    if (matchedVoucher.usageLimit && matchedVoucher.usedCount >= matchedVoucher.usageLimit) {
+      return res.status(400).json({ message: 'Mã giảm giá đã hết lượt sử dụng' })
+    }
+
+    // Check 1 lần / khách hàng (phone/email)
+    if (matchedVoucher.oncePerCustomer) {
+      const hasUsed = (store.orders || []).some(
+        (o) =>
+          o.voucher_code === cleanCode &&
+          o.status !== 'cancelled' &&
+          ((phone && o.phone === String(phone).trim()) || (email && o.email === String(email).trim().toLowerCase()))
+      )
+      if (hasUsed) {
+        return res.status(400).json({ message: `Mã ${cleanCode} chỉ được áp dụng 1 lần duy nhất cho mỗi khách hàng` })
+      }
+    }
+
+    // Tính toán discount an toàn trên server
+    let calcDiscount = 0
+    if (matchedVoucher.discountPercent) {
+      calcDiscount = Math.round((subtotal * matchedVoucher.discountPercent) / 100)
+      if (matchedVoucher.maxDiscount) {
+        calcDiscount = Math.min(calcDiscount, matchedVoucher.maxDiscount)
+      }
+    } else if (matchedVoucher.discountAmountFixed) {
+      calcDiscount = Math.min(matchedVoucher.discountAmountFixed, subtotal)
+    }
+
+    const clientClaimed = Math.max(0, Number(discount) || 0)
+    finalDiscountAmount = Math.min(calcDiscount, clientClaimed > 0 ? clientClaimed : calcDiscount)
+    validatedVoucherCode = cleanCode
+
+    // Cập nhật usedCount của voucher
+    matchedVoucher.usedCount = (matchedVoucher.usedCount || 0) + 1
+  }
+
+  const total = Math.max(0, subtotal - finalDiscountAmount + shippingFee)
   const nextId = store.orders.reduce((max, order) => Math.max(max, Number(order.id)), 1000) + 1
 
   const order = {
@@ -296,7 +439,7 @@ app.post('/api/orders', async (req, res) => {
     shipping_fee: shippingFee,
     subtotal,
     voucher_code: validatedVoucherCode,
-    discount_amount: discountAmount,
+    discount_amount: finalDiscountAmount,
     total,
     status: 'pending',
     created_at: new Date().toISOString(),
@@ -645,6 +788,99 @@ app.put('/api/admin/livechat/:sessionId/read', requireAdmin, async (req, res) =>
     await writeStore(store)
   }
   res.json({ success: true })
+})
+
+// ─── Phase 2: Admin Voucher Management Endpoints ───
+app.get('/api/admin/vouchers', requireAdmin, async (req, res) => {
+  const store = await readStore()
+  res.json({ vouchers: store.vouchers || [] })
+})
+
+app.post('/api/admin/vouchers', requireAdmin, async (req, res) => {
+  const store = await readStore()
+  const {
+    code,
+    description,
+    discountPercent = 0,
+    discountAmountFixed = 0,
+    minOrderValue = 0,
+    maxDiscount = 0,
+    appOnly = false,
+    oncePerCustomer = false,
+    usageLimit = 100
+  } = req.body
+
+  if (!code || !code.trim()) {
+    return res.status(400).json({ message: 'Vui lòng nhập mã giảm giá' })
+  }
+
+  const cleanCode = String(code).trim().toUpperCase()
+  const exists = (store.vouchers || []).some((v) => v.code === cleanCode)
+  if (exists) {
+    return res.status(409).json({ message: `Mã voucher ${cleanCode} đã tồn tại trong hệ thống` })
+  }
+
+  const nextId = (store.vouchers || []).reduce((max, v) => Math.max(max, Number(v.id || 0)), 0) + 1
+  const newVoucher = {
+    id: nextId,
+    code: cleanCode,
+    description: description || `Mã giảm giá ${cleanCode}`,
+    discountPercent: Math.max(0, Number(discountPercent) || 0),
+    discountAmountFixed: Math.max(0, Number(discountAmountFixed) || 0),
+    minOrderValue: Math.max(0, Number(minOrderValue) || 0),
+    maxDiscount: Math.max(0, Number(maxDiscount) || 0),
+    appOnly: !!appOnly,
+    oncePerCustomer: !!oncePerCustomer,
+    usageLimit: Math.max(1, Number(usageLimit) || 100),
+    usedCount: 0,
+    active: true,
+    created_at: new Date().toISOString()
+  }
+
+  store.vouchers = store.vouchers || []
+  store.vouchers.unshift(newVoucher)
+  await writeStore(store)
+  res.status(201).json({ voucher: newVoucher })
+})
+
+app.put('/api/admin/vouchers/:id', requireAdmin, async (req, res) => {
+  const store = await readStore()
+  const id = Number(req.params.id)
+  const voucher = (store.vouchers || []).find((v) => Number(v.id) === id)
+  if (!voucher) return res.status(404).json({ message: 'Không tìm thấy mã giảm giá' })
+
+  const allowed = [
+    'description',
+    'discountPercent',
+    'discountAmountFixed',
+    'minOrderValue',
+    'maxDiscount',
+    'appOnly',
+    'oncePerCustomer',
+    'usageLimit',
+    'active'
+  ]
+
+  for (const key of allowed) {
+    if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+      voucher[key] = req.body[key]
+    }
+  }
+
+  voucher.updated_at = new Date().toISOString()
+  await writeStore(store)
+  res.json({ voucher })
+})
+
+app.delete('/api/admin/vouchers/:id', requireAdmin, async (req, res) => {
+  const store = await readStore()
+  const id = Number(req.params.id)
+  const index = (store.vouchers || []).findIndex((v) => Number(v.id) === id)
+  if (index === -1) return res.status(404).json({ message: 'Không tìm thấy mã giảm giá' })
+
+  const removed = store.vouchers.splice(index, 1)[0]
+  await writeStore(store)
+  res.json({ message: 'Đã xóa mã giảm giá thành công', voucher: removed })
 })
 
 // Serve production static frontend if dist exists

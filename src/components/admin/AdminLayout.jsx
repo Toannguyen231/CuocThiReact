@@ -30,6 +30,9 @@ export default function AdminLayout() {
           <NavLink to="/admin/products" className={({ isActive }) => `admin-nav-link ${isActive ? 'active' : ''}`}>
             🛍️ Sản phẩm
           </NavLink>
+          <NavLink to="/admin/vouchers" className={({ isActive }) => `admin-nav-link ${isActive ? 'active' : ''}`}>
+            🎟️ Quản lý Voucher
+          </NavLink>
           <NavLink to="/admin/chat" className={({ isActive }) => `admin-nav-link ${isActive ? 'active' : ''}`}>
             💬 Tin nhắn Live Chat
           </NavLink>
