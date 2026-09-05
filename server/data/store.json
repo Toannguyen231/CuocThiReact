@@ -348,5 +348,35 @@
         }
       ]
     }
+  ],
+  "vouchers": [
+    {
+      "id": 1,
+      "code": "APP10",
+      "description": "Ưu đãi độc quyền ứng dụng Chiếu Nẫu: Giảm 10% đơn hàng đầu tiên",
+      "discountPercent": 10,
+      "maxDiscount": 100000,
+      "minOrderValue": 0,
+      "appOnly": true,
+      "oncePerCustomer": true,
+      "usageLimit": 500,
+      "usedCount": 0,
+      "active": true,
+      "created_at": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "code": "CHIEUNAU20",
+      "description": "Mừng ra mắt bộ sưu tập mới: Giảm 20.000₫ cho đơn từ 200.000₫",
+      "discountAmountFixed": 20000,
+      "discountPercent": 0,
+      "minOrderValue": 200000,
+      "appOnly": false,
+      "oncePerCustomer": false,
+      "usageLimit": 200,
+      "usedCount": 0,
+      "active": true,
+      "created_at": "2026-02-01T00:00:00.000Z"
+    }
   ]
 }

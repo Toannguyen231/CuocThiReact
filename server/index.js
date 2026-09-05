@@ -3,8 +3,10 @@ import cors from 'cors'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { promises as fs } from 'fs'
+import fsSync from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import multer from 'multer'
 import { products as seedProducts, giftSets } from '../src/data/products.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -14,9 +16,15 @@ const STORE_PATH = path.join(DATA_DIR, 'store.json')
 const JWT_SECRET = process.env.JWT_SECRET || 'chieu-nau-local-secret'
 const PORT = process.env.PORT || 3001
 
+const UPLOADS_PRODUCTS_DIR = path.join(__dirname, '../public/uploads/products')
+if (!fsSync.existsSync(UPLOADS_PRODUCTS_DIR)) {
+  fsSync.mkdirSync(UPLOADS_PRODUCTS_DIR, { recursive: true })
+}
+
 const app = express()
 app.use(cors())
 app.use(express.json())
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')))
 
 const adminUser = {
   id: 1,
@@ -535,9 +543,149 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
   res.json({ order: hydrateOrder(order, store.products) })
 })
 
+// ─── Upload Configuration (Multer) ───
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOADS_PRODUCTS_DIR)
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase()
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e6)}${ext}`
+    cb(null, uniqueName)
+  }
+})
+
+const fileFilter = (req, file, cb) => {
+  const allowedMimes = ['image/jpeg', 'image/png', 'image/webp']
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true)
+  } else {
+    cb(new Error('INVALID_FORMAT'), false)
+  }
+}
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // < 5MB
+})
+
+function generateSlug(text) {
+  return String(text || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+}
+
+// Upload endpoint
+app.post('/api/admin/upload', requireAdmin, (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'Kích thước file vượt quá 5MB' })
+      }
+      return res.status(400).json({ message: `Lỗi tải ảnh: ${err.message}` })
+    } else if (err) {
+      if (err.message === 'INVALID_FORMAT') {
+        return res.status(400).json({ message: 'Chỉ chấp nhận file ảnh JPG, PNG hoặc WEBP' })
+      }
+      return res.status(500).json({ message: 'Lỗi server khi upload ảnh' })
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'Vui lòng chọn file ảnh để tải lên' })
+    }
+
+    const filename = req.file.filename
+    const url = `/uploads/products/${filename}`
+    res.json({ url, filename })
+  })
+})
+
 app.get('/api/admin/products', requireAdmin, async (req, res) => {
   const store = await readStore()
   res.json({ products: store.products })
+})
+
+app.post('/api/admin/products', requireAdmin, async (req, res) => {
+  const store = await readStore()
+  const {
+    name,
+    slug: rawSlug,
+    shortDesc = '',
+    description = '',
+    price = 0,
+    priceMax = 0,
+    priceDisplay = '',
+    category = 'tui-xach',
+    categoryName = 'Túi xách cói',
+    image = '',
+    imageHover = '',
+    featured = false,
+    stock = 0,
+    specs = [],
+    sectionLabel = '',
+    type = 'product',
+    active = true
+  } = req.body
+
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ message: 'Tên sản phẩm không được để trống' })
+  }
+
+  const numPrice = Math.max(0, Number(price) || 0)
+  const numPriceMax = Math.max(0, Number(priceMax) || 0)
+  const numStock = Math.max(0, Number(stock) || 0)
+
+  // Slug tự gen từ name nếu thiếu
+  let finalSlug = rawSlug && String(rawSlug).trim()
+    ? generateSlug(rawSlug)
+    : generateSlug(name)
+
+  if (!finalSlug) {
+    finalSlug = `san-pham-${Date.now()}`
+  }
+
+  // Check slug trùng: nếu slug đã tồn tại trong store.products -> append timestamp
+  const isSlugExisted = store.products.some((p) => p.slug === finalSlug)
+  if (isSlugExisted) {
+    finalSlug = `${finalSlug}-${Math.floor(Date.now() / 1000)}`
+  }
+
+  // ID tự tăng: max(id trong store.products) + 1
+  const nextId = store.products.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1
+
+  // Phase 2: chuyển sang DB với auto-increment + unique constraint slug
+  const newProduct = {
+    id: nextId,
+    slug: finalSlug,
+    name: String(name).trim(),
+    shortDesc: String(shortDesc || '').trim(),
+    description: String(description || '').trim(),
+    price: numPrice,
+    priceMax: numPriceMax,
+    priceDisplay: priceDisplay || `${numPrice.toLocaleString('vi-VN')}₫`,
+    category: category || 'tui-xach',
+    categoryName: categoryName || 'Túi xách cói',
+    image: image || '',
+    imageHover: imageHover || '',
+    featured: Boolean(featured),
+    stock: numStock,
+    specs: Array.isArray(specs) ? specs : [],
+    sectionLabel: sectionLabel || '',
+    type: type || 'product',
+    active: active !== false
+  }
+
+  store.products.unshift(newProduct)
+  await writeStore(store)
+
+  res.status(201).json({ product: newProduct })
 })
 
 app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
@@ -545,13 +693,58 @@ app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
   const product = store.products.find((item) => Number(item.id) === Number(req.params.id))
   if (!product) return res.status(404).json({ message: 'Không tìm thấy sản phẩm' })
 
-  const allowed = ['name', 'price', 'priceDisplay', 'stock', 'category', 'categoryName', 'shortDesc', 'description', 'active']
+  const allowed = [
+    'name',
+    'price',
+    'priceMax',
+    'priceDisplay',
+    'stock',
+    'category',
+    'categoryName',
+    'shortDesc',
+    'description',
+    'active',
+    'featured',
+    'specs',
+    'image',
+    'imageHover',
+    'sectionLabel',
+    'type'
+  ]
+
   for (const key of allowed) {
-    if (Object.prototype.hasOwnProperty.call(req.body, key)) product[key] = req.body[key]
+    if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+      if (key === 'specs' && Array.isArray(req.body.specs)) {
+        product.specs = req.body.specs
+      } else if (key === 'priceMax') {
+        product.priceMax = Number(req.body.priceMax) || 0
+      } else if (key === 'price') {
+        product.price = Number(req.body.price) || 0
+      } else if (key === 'stock') {
+        product.stock = Number(req.body.stock) || 0
+      } else if (key === 'featured') {
+        product.featured = Boolean(req.body.featured)
+      } else if (key === 'active') {
+        product.active = Boolean(req.body.active)
+      } else {
+        product[key] = req.body[key]
+      }
+    }
   }
 
   await writeStore(store)
   res.json({ product })
+})
+
+app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
+  const store = await readStore()
+  const index = store.products.findIndex((item) => Number(item.id) === Number(req.params.id))
+  if (index === -1) return res.status(404).json({ message: 'Không tìm thấy sản phẩm' })
+
+  // KHÔNG xóa file ảnh vật lý (để tránh mất ảnh dùng chung), chỉ xóa record trong store.products
+  const removed = store.products.splice(index, 1)[0]
+  await writeStore(store)
+  res.json({ message: 'Đã xóa sản phẩm', id: removed.id })
 })
 
 // ─── Admin User Management Endpoints ───

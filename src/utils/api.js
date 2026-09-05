@@ -35,7 +35,22 @@ export const api = {
   getAdminOrder: (id) => request(`/admin/orders/${id}`),
   updateOrderStatus: (id, status) => request(`/admin/orders/${id}`, { method: 'PUT', body: JSON.stringify({ status }) }),
   getAdminProducts: () => request('/admin/products'),
+  createProduct: (data) => request('/admin/products', { method: 'POST', body: JSON.stringify(data) }),
   updateProduct: (id, data) => request(`/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteProduct: (id) => request(`/admin/products/${id}`, { method: 'DELETE' }),
+  uploadImage: async (file) => {
+    const formData = new FormData()
+    formData.append('image', file)
+    const token = localStorage.getItem('chieunau_admin_token')
+    const res = await fetch(getApiUrl('/api/admin/upload'), {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.message || 'Lỗi upload')
+    return data
+  }
 }
 
 export function formatPrice(price) {
