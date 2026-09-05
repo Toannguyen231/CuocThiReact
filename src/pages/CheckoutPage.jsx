@@ -15,6 +15,7 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true))
   const [form, setForm] = useState({
     customerName: '',
     phone: '',
@@ -24,6 +25,20 @@ export default function CheckoutPage() {
     paymentMethod: 'cod',
     shippingMethod: 'standard'
   })
+
+  // Lắng nghe trạng thái kết nối mạng (online/offline)
+  // TODO Phase 2: Nâng cấp Background Sync Queue đơn hàng khi offline
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   // Quản lý voucher giảm giá độc quyền app
   const [voucherInput, setVoucherInput] = useState('')
@@ -95,6 +110,10 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!navigator.onLine) {
+      setError('Bạn đang ngoại tuyến. Vui lòng kết nối mạng để đặt hàng.')
+      return
+    }
     if (!form.customerName || !form.phone || !form.address) {
       setError('Vui lòng điền đầy đủ thông tin bắt buộc.')
       return
@@ -107,24 +126,43 @@ export default function CheckoutPage() {
         ? `${form.note ? form.note + ' | ' : ''}[App Promo: ${appliedVoucher.code} - Giảm ${formatPrice(discountAmount)}]`
         : form.note
 
-      const res = await fetch(getApiUrl('/api/orders'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          note: finalNote,
-          voucherCode: appliedVoucher ? appliedVoucher.code : null,
-          discount: discountAmount,
-          items: cart.map(item => ({ productId: item.id, quantity: item.quantity, price: item.price })),
-          subtotal: cartTotal,
-          shippingFee,
-          total: grandTotal
+      let res
+      try {
+        res = await fetch(getApiUrl('/api/orders'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...form,
+            note: finalNote,
+            voucherCode: appliedVoucher ? appliedVoucher.code : null,
+            discount: discountAmount,
+            items: cart.map(item => ({ productId: item.id, quantity: item.quantity, price: item.price })),
+            subtotal: cartTotal,
+            shippingFee,
+            total: grandTotal
+          })
         })
-      })
+      } catch (fetchErr) {
+        // Bắt lỗi rớt mạng hoặc server offline
+        throw new Error('Bạn đang ngoại tuyến hoặc không thể kết nối tới máy chủ. Vui lòng kiểm tra lại mạng.')
+      }
+
       const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Lỗi đặt hàng')
+      if (!res.ok) {
+        // Nếu lỗi liên quan đến voucher từ backend, hiển thị vào voucherError thay vì crash submit
+        if (res.status === 400 && data.message && data.message.toLowerCase().includes('mã giảm giá')) {
+          setVoucherError(data.message)
+          setAppliedVoucher(null)
+          return
+        }
+        throw new Error(data.message || 'Lỗi đặt hàng')
+      }
+
       clearCart()
-      navigate(`/dat-hang-thanh-cong/${data.orderId}`)
+      // Truyền dữ liệu order thực tế từ backend để trang success hiển thị giá chính xác tuyệt đối
+      navigate(`/dat-hang-thanh-cong/${data.orderId}`, {
+        state: { order: data.order }
+      })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -212,8 +250,26 @@ export default function CheckoutPage() {
             </label>
           </div>
 
-          <button type="submit" className="btn-place-order" disabled={loading}>
-            {loading ? 'Đang xử lý...' : 'Đặt hàng →'}
+          {!isOnline && (
+            <div style={{
+              backgroundColor: '#fff3cd',
+              color: '#856404',
+              padding: '10px 14px',
+              borderRadius: '8px',
+              marginBottom: '1rem',
+              fontSize: '0.88rem',
+              border: '1px solid #ffeeba',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span>⚠️</span>
+              <span>Bạn đang ngoại tuyến. Vui lòng kết nối mạng để hoàn tất đặt hàng.</span>
+            </div>
+          )}
+
+          <button type="submit" className="btn-place-order" disabled={loading || !isOnline}>
+            {loading ? 'Đang xử lý...' : !isOnline ? 'Đang ngoại tuyến' : 'Đặt hàng →'}
           </button>
         </form>
 

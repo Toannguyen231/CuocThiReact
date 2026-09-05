@@ -1,21 +1,57 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAppMode } from '../../hooks/useAppMode'
 import { APP_PROMO } from '../../utils/appPromo'
 
+const STORAGE_KEY = 'cn_app_promo_dismissed'
+const DISMISS_DAYS = 7
+
 /**
  * Banner khuyến mãi độc quyền dành riêng cho chế độ App (PWA Standalone)
  * Chỉ render khi isApp = true && !isAdmin
+ * - Lưu timestamp khi đóng vào localStorage ('cn_app_promo_dismissed'), ẩn trong 7 ngày
+ * - Không render ở /thanh-toan, /gio-hang, /dat-hang-thanh-cong/:id để tránh che CTA quan trọng
  */
 export default function AppPromoBanner() {
   const { isApp } = useAppMode()
   const location = useLocation()
   const [copied, setCopied] = useState(false)
-  const [dismissed, setDismissed] = useState(false)
+  const [isDismissed, setIsDismissed] = useState(true) // Mặc định ẩn trước khi check storage để tránh flicker
+
+  useEffect(() => {
+    try {
+      const dismissedAt = localStorage.getItem(STORAGE_KEY)
+      if (dismissedAt) {
+        const diffDays = (Date.now() - Number(dismissedAt)) / (1000 * 60 * 60 * 24)
+        if (diffDays < DISMISS_DAYS) {
+          setIsDismissed(true)
+          return
+        }
+      }
+      setIsDismissed(false)
+    } catch {
+      setIsDismissed(false)
+    }
+  }, [])
 
   const isAdmin = location.pathname.startsWith('/admin')
 
-  if (!isApp || isAdmin || dismissed) return null
+  // Không hiển thị trên các trang thanh toán, giỏ hàng, và kết quả đơn hàng
+  const isExcludedPage =
+    location.pathname === '/thanh-toan' ||
+    location.pathname === '/gio-hang' ||
+    location.pathname.startsWith('/dat-hang-thanh-cong')
+
+  if (!isApp || isAdmin || isDismissed || isExcludedPage) return null
+
+  const handleDismiss = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, String(Date.now()))
+    } catch {
+      // bỏ qua lỗi storage
+    }
+    setIsDismissed(true)
+  }
 
   const handleCopy = async () => {
     try {
@@ -75,9 +111,9 @@ export default function AppPromoBanner() {
 
         <button
           type="button"
-          onClick={() => setDismissed(true)}
+          onClick={handleDismiss}
           className="btn-app-dismiss"
-          aria-label="Đóng thông báo"
+          aria-label="Đóng thông báo (ẩn trong 7 ngày)"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
             <line x1="18" y1="6" x2="6" y2="18"></line>

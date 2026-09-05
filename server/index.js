@@ -233,10 +233,27 @@ app.get('/api/products/:slug', async (req, res) => {
 
 app.post('/api/orders', async (req, res) => {
   const store = await readStore()
-  const { customerName, phone, email, address, note, paymentMethod, shippingMethod, items = [] } = req.body
+  const { customerName, phone, email, address, note, paymentMethod, shippingMethod, items = [], voucherCode = null, discount = 0 } = req.body
 
   if (!customerName || !phone || !address || items.length === 0) {
     return res.status(400).json({ message: 'Vui lòng kiểm tra thông tin đơn hàng' })
+  }
+
+  // Phase 1.6: validate server-side tối thiểu, Phase 2 chuyển sang bảng vouchers + giới hạn 1 lần/user
+  const VALID_VOUCHERS = {
+    APP10: { percent: 10, description: 'Ưu đãi app: giảm 10% đơn đầu' }
+  }
+
+  let validatedVoucherCode = null
+  let discountPercent = 0
+
+  if (voucherCode) {
+    const cleanCode = String(voucherCode).trim().toUpperCase()
+    if (!VALID_VOUCHERS[cleanCode]) {
+      return res.status(400).json({ message: 'Mã giảm giá không hợp lệ hoặc đã hết hạn' })
+    }
+    validatedVoucherCode = cleanCode
+    discountPercent = VALID_VOUCHERS[cleanCode].percent
   }
 
   const orderItems = items.map((item) => {
@@ -255,7 +272,16 @@ app.post('/api/orders', async (req, res) => {
 
   const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const shippingFee = shippingMethod === 'express' ? 30000 : 0
-  const total = subtotal + shippingFee
+
+  // Server tính toán giảm giá và chặn client tự ý tăng discount
+  const calculatedDiscount = validatedVoucherCode ? Math.round((subtotal * discountPercent) / 100) : 0
+  const clientClaimedDiscount = Math.max(0, Number(discount) || 0)
+  // Lấy min giữa server tính và client gửi (nếu client gửi discount), đảm bảo không vượt quá calculatedDiscount
+  const discountAmount = validatedVoucherCode
+    ? Math.min(calculatedDiscount, clientClaimedDiscount > 0 ? clientClaimedDiscount : calculatedDiscount)
+    : 0
+
+  const total = Math.max(0, subtotal - discountAmount + shippingFee)
   const nextId = store.orders.reduce((max, order) => Math.max(max, Number(order.id)), 1000) + 1
 
   const order = {
@@ -269,6 +295,8 @@ app.post('/api/orders', async (req, res) => {
     shipping_method: shippingMethod || 'standard',
     shipping_fee: shippingFee,
     subtotal,
+    voucher_code: validatedVoucherCode,
+    discount_amount: discountAmount,
     total,
     status: 'pending',
     created_at: new Date().toISOString(),

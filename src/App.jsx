@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation, Link } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import PageLoader from './components/layout/PageLoader'
@@ -12,6 +12,7 @@ import PWAUpdateToast from './components/ui/PWAUpdateToast'
 import AppSplash from './components/app/AppSplash'
 import BottomTabBar from './components/app/BottomTabBar'
 import AppPromoBanner from './components/app/AppPromoBanner'
+import ExploreSheet from './components/app/ExploreSheet'
 
 import HomePage from './pages/HomePage'
 import StoryPage from './pages/StoryPage'
@@ -46,6 +47,7 @@ function ScrollToTop() {
 
 function App() {
   const location = useLocation()
+  const [isExploreOpen, setIsExploreOpen] = useState(false)
   const isAdmin = location.pathname.startsWith('/admin')
   const hasPageHero = [
     '/',
@@ -133,8 +135,15 @@ function App() {
       {!isAdmin && <PWAInstallBanner />}
       {!isAdmin && <PWAUpdateToast />}
 
-      {/* App-mode components (Bottom Tab Bar và Banner Voucher APP10) */}
-      <BottomTabBar />
+      {/* App-mode components (Bottom Tab Bar, Khám Phá Sheet và Banner Voucher APP10) */}
+      <BottomTabBar
+        onOpenExplore={() => setIsExploreOpen(true)}
+        isExploreOpen={isExploreOpen}
+      />
+      <ExploreSheet
+        isOpen={isExploreOpen}
+        onClose={() => setIsExploreOpen(false)}
+      />
       <AppPromoBanner />
     </>
   )

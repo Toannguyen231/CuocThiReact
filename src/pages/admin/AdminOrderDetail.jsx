@@ -86,6 +86,11 @@ export default function AdminOrderDetail() {
             <p><strong>Phương thức:</strong> {order.payment_method === 'cod' ? 'COD' : 'Chuyển khoản'}</p>
             <p><strong>Vận chuyển:</strong> {order.shipping_method === 'express' ? 'Giao nhanh' : 'Tiêu chuẩn'}</p>
             <p><strong>Tạm tính:</strong> {formatPrice(order.subtotal || 0)}</p>
+            {order.voucher_code && (
+              <p style={{ color: 'var(--primary, #2d5a2d)' }}>
+                <strong>Voucher ({order.voucher_code}):</strong> -{formatPrice(order.discount_amount || 0)}
+              </p>
+            )}
             <p><strong>Phí vận chuyển:</strong> {order.shipping_fee ? formatPrice(order.shipping_fee) : 'Miễn phí'}</p>
             <p className="admin-total"><strong>Tổng cộng:</strong> {formatPrice(order.total || 0)}</p>
           </div>

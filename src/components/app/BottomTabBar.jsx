@@ -1,20 +1,19 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useCart } from '../../contexts/CartContext'
 import { useAppMode } from '../../hooks/useAppMode'
 
 /**
- * Bottom Tab Bar chuẩn app cho chế độ PWA Standalone
- * 5 tabs thiết kế cân đối:
+ * Bottom Tab Bar chuẩn app cho chế độ PWA Standalone (5 tab cân đối):
  * 1. Trang chủ (/)
  * 2. Sản phẩm (/san-pham)
  * 3. Quét QR (/quet-ma) - Nút trung tâm nổi bật, dễ bấm
- * 4. Giỏ hàng (/gio-hang) có badge số lượng
+ * 4. Khám phá (Mở BottomSheet 4 trang content: Câu chuyện, Quà DN, Tác động, Cẩm nang)
  * 5. Tài khoản (/tai-khoan)
+ *
+ * (Giỏ hàng đã có trên Navbar + CartDrawer nên nhường chỗ cho Khám phá để không mất 4 trang content)
  */
-export default function BottomTabBar() {
+export default function BottomTabBar({ onOpenExplore, isExploreOpen }) {
   const { isApp } = useAppMode()
   const location = useLocation()
-  const { cartCount } = useCart()
 
   const isAdmin = location.pathname.startsWith('/admin')
 
@@ -24,7 +23,12 @@ export default function BottomTabBar() {
   const isHome = location.pathname === '/' || location.pathname === '/index.html'
   const isProducts = location.pathname.startsWith('/san-pham')
   const isScan = location.pathname.startsWith('/quet-ma')
-  const isCart = location.pathname === '/gio-hang'
+  const isExplore = isExploreOpen || [
+    '/cau-chuyen',
+    '/qua-tang-doanh-nghiep',
+    '/tac-dong-xa-hoi',
+    '/cam-nang'
+  ].some((path) => location.pathname.startsWith(path))
   const isAccount = location.pathname === '/tai-khoan' || location.pathname === '/dang-nhap' || location.pathname === '/dang-ky'
 
   return (
@@ -62,18 +66,20 @@ export default function BottomTabBar() {
         <span>Quét QR</span>
       </Link>
 
-      {/* 4. Giỏ hàng */}
-      <Link to="/gio-hang" className={`app-tab-item ${isCart ? 'active' : ''}`} aria-label="Giỏ hàng">
-        <div className="app-tab-icon-wrapper">
-          <svg viewBox="0 0 24 24" fill={isCart ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={isCart ? '1' : '2'} width="22" height="22">
-            <circle cx="9" cy="21" r="1"></circle>
-            <circle cx="20" cy="21" r="1"></circle>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-          </svg>
-          {cartCount > 0 && <span className="app-tab-badge">{cartCount}</span>}
-        </div>
-        <span>Giỏ hàng</span>
-      </Link>
+      {/* 4. Khám phá (Mở Bottom Sheet) */}
+      <button
+        type="button"
+        onClick={onOpenExplore}
+        className={`app-tab-item ${isExplore ? 'active' : ''}`}
+        aria-label="Khám phá"
+        style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+        </svg>
+        <span>Khám phá</span>
+      </button>
 
       {/* 5. Tài khoản */}
       <Link to="/tai-khoan" className={`app-tab-item ${isAccount ? 'active' : ''}`} aria-label="Tài khoản">

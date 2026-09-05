@@ -17,7 +17,7 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        orientation: 'portrait-primary',
+        orientation: 'portrait', // Cho phép xoay ngang khi dùng tablet hoặc lật màn hình
         lang: 'vi',
         dir: 'ltr',
         theme_color: '#2d5a2d', // --primary trong src/styles/index.css
